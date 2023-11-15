@@ -14,7 +14,9 @@
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
             "program": "${workspaceFolder}/Web2Gateway/bin/Debug/net7.0/Web2Gateway.dll",
-            "args": [],
+            "args": [
+                //"C:\\Users\\don\\.g2to3\\appsettings.json"
+            ],
             "cwd": "${workspaceFolder}/Web2Gateway",
             "stopAtEntry": false,
             // Enable launching a web browser when ASP.NET Core starts. For more information: https://aka.ms/VSCode-CS-LaunchJson-WebBrowser
