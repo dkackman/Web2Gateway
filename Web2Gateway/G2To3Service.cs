@@ -18,4 +18,8 @@ public sealed class G2To3Service
         wellKnown.donation_address = _configuration.GetValue("App:donation_address", "");
         return wellKnown;
     }
+    public async Task<dynamic> GetStore(string storeId, CancellationToken cancellationToken)
+    {
+        return "spoofed store id";
+    }
 }

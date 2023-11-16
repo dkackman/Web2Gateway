@@ -1,5 +1,6 @@
 using Web2Gateway;
 using System.Dynamic;
+using Microsoft.AspNetCore.Mvc;
 
 // doing all of this in the mini-api expressjs-like approach
 
@@ -50,11 +51,39 @@ app.MapGet("/.well-known", () =>
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error getting well-known");
+            logger.LogError(ex, "{Message}", ex.Message);
             throw;
         }
     })
 .WithName(".well-known")
+.WithOpenApi();
+
+app.MapGet("/{storeId}", async (HttpContext httpContext, string storeId, CancellationToken cancellationToken) =>
+    {
+        try
+        {
+            storeId = storeId.TrimEnd('/');
+
+            // A referrer indicates that the user is trying to access the store from a website
+            // we want to redirect them so that the URL includes the storeId in the path
+
+            var referer = httpContext.Request.Headers["referer"].ToString();
+            if (!string.IsNullOrEmpty(referer) && referer.Contains(storeId))
+            {
+                httpContext.Response.Headers["Location"] = $"{referer}/{storeId}";
+                return Results.Redirect($"{referer}/{storeId}", true);
+            }
+
+            var g223 = app.Services.GetRequiredService<G2To3Service>();
+            return await g223.GetStore(storeId, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "{Message}", ex.Message);
+            throw;
+        }
+    })
+.WithName("{storeId}")
 .WithOpenApi();
 
 app.UseCors()
