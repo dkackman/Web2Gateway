@@ -41,12 +41,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapGet("/.well-known", async (CancellationToken cancellationToken) =>
+app.MapGet("/.well-known", () =>
     {
         try
         {
             var g223 = app.Services.GetRequiredService<G2To3Service>();
-            return await g223.GetWellKnown(cancellationToken);
+            return g223.GetWellKnown();
         }
         catch (Exception ex)
         {
