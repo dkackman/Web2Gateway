@@ -3,7 +3,7 @@ using System.Text;
 /// <summary>
 /// Provides utility methods for converting strings to and from hexadecimal representation.
 /// </summary>
-public static class HexUtils
+internal static class HexUtils
 {
     /// <summary>
     /// Converts a string to its hexadecimal representation.
