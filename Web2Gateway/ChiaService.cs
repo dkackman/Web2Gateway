@@ -2,6 +2,9 @@ using chia.dotnet;
 
 namespace Web2Gateway;
 
+/// <summary>
+/// Provides methods for interacting with the Chia blockchain.
+/// </summary>
 public sealed class ChiaService
 {
     private readonly ILogger<ChiaService> _logger;
@@ -12,7 +15,7 @@ public sealed class ChiaService
 
     private Config GetConfig()
     {
-        var configPath = _configuration.GetValue<string>("App:chia_config_path", "");
+        var configPath = _configuration.GetValue("App:chia_config_path", "");
         if (!string.IsNullOrEmpty(configPath))
         {
             _logger.LogInformation("Using config file at {Path}", configPath);
@@ -20,43 +23,6 @@ public sealed class ChiaService
         }
 
         return Config.Open();
-    }
-
-    public async Task<ulong> GetFee(ulong cost, CancellationToken stoppingToken)
-    {
-        try
-        {
-            var endpoint = GetConfig().GetEndpoint("full_node");
-            using var rpcClient = new HttpRpcClient(endpoint);
-
-            var fullNode = new FullNodeProxy(rpcClient, "DlMirrorSync");
-            int[] targetTimes = { 300 }; // five minutes
-            var fee = await fullNode.GetFeeEstimate(cost, targetTimes, stoppingToken);
-            return fee.estimates.First();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "{Message}", ex.Message);
-            return _configuration.GetValue<ulong>("DlMirrorSync:DefaultFee", 500000);
-        }
-    }
-
-    public async Task<Wallet?> GetWallet(uint walletId, CancellationToken stoppingToken)
-    {
-        try
-        {
-            var endpoint = GetConfig().GetEndpoint("wallet");
-            var rpcClient = new HttpRpcClient(endpoint);
-
-            var wallet = new WalletProxy(rpcClient, "DlMirrorSync");
-            await wallet.HealthZ(stoppingToken);
-            return new Wallet(walletId, wallet);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "{Message}", ex.Message);
-            return null;
-        }
     }
 
     public async Task<DataLayerProxy?> GetDataLayer(CancellationToken stoppingToken)
