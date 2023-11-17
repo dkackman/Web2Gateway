@@ -1,6 +1,4 @@
 using Web2Gateway;
-using System.Dynamic;
-using Microsoft.AspNetCore.Mvc;
 
 // doing all of this in the mini-api expressjs-like approach
 
@@ -52,13 +50,13 @@ app.MapGet("/.well-known", () =>
         catch (Exception ex)
         {
             logger.LogError(ex, "{Message}", ex.Message);
-            throw;
+            return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
         }
     })
 .WithName(".well-known")
 .WithOpenApi();
 
-app.MapGet("/{storeId}", async (HttpContext httpContext, string storeId, CancellationToken cancellationToken) =>
+app.MapGet("/{storeId}", async (HttpContext httpContext, string storeId, bool? showKeys, CancellationToken cancellationToken) =>
     {
         try
         {
@@ -75,12 +73,36 @@ app.MapGet("/{storeId}", async (HttpContext httpContext, string storeId, Cancell
             }
 
             var g223 = app.Services.GetRequiredService<G2To3Service>();
-            return await g223.GetStore(storeId, cancellationToken);
+            var keys = await g223.GetKeys(storeId, cancellationToken) as IEnumerable<string>;
+
+            if (keys is not null)
+            {
+                var apiResponse = keys.Select(key => HexUtils.FromHex(key)).ToList();
+
+                if (apiResponse != null && apiResponse.Count > 0 && apiResponse.Contains("index.html") && showKeys != true)
+                {
+                    var html = await g223.GetValueAsHtml(storeId, cancellationToken);
+
+                    // Set Content-Type to HTML and send the decoded value
+                    httpContext.Response.ContentType = "text/html";
+                    await httpContext.Response.WriteAsync(html, cancellationToken);
+                    return Results.Ok();
+                }
+
+                return Results.Ok(apiResponse);
+            }
+
+            return Results.NotFound();
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogError(ex, "{Message}", ex.Message);
+            return Results.StatusCode(StatusCodes.Status500InternalServerError);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "{Message}", ex.Message);
-            throw;
+            return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
         }
     })
 .WithName("{storeId}")

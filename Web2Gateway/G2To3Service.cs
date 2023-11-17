@@ -1,4 +1,5 @@
 using System.Dynamic;
+using Microsoft.AspNetCore.Server.IIS.Core;
 
 namespace Web2Gateway;
 
@@ -18,8 +19,44 @@ public sealed class G2To3Service
         wellKnown.donation_address = _configuration.GetValue("App:donation_address", "");
         return wellKnown;
     }
-    public async Task<dynamic> GetStore(string storeId, CancellationToken cancellationToken)
+
+    public async Task<IEnumerable<string>?> GetKeys(string storeId, CancellationToken cancellationToken)
     {
-        return "spoofed store id";
+        var dataLayer = await _chiaService.GetDataLayer(cancellationToken) ?? throw new Exception("DataLayer not available");
+
+        try
+        {
+            return await dataLayer.GetKeys(storeId, null, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Message}", ex.Message);
+            return null;
+        }
+    }
+
+    public async Task<string> GetValueAsHtml(string storeId, CancellationToken cancellationToken)
+    {
+        var hexKey = HexUtils.ToHex("index.html");
+        var dataLayerResponse = await GetValue(storeId, hexKey, cancellationToken) ?? throw new InvalidOperationException("Couldn't retrieve expected key value");
+        var value = HexUtils.FromHex(dataLayerResponse);
+        // Add the base tag
+        var baseTag = $"<base href=\"/{storeId}/\">";
+        return value.Replace("<head>", $"<head>\n    {baseTag}");
+    }
+
+    public async Task<string?> GetValue(string storeId, string key, CancellationToken cancellationToken)
+    {
+        var dataLayer = await _chiaService.GetDataLayer(cancellationToken) ?? throw new Exception("DataLayer not available");
+        
+        try
+        {
+            return await dataLayer.GetValue(storeId, key, null, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "{Message}", ex.Message);
+            return null;
+        }
     }
 }
