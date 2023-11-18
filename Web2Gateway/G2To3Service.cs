@@ -2,6 +2,13 @@ using System.Dynamic;
 
 namespace Web2Gateway;
 
+
+public record WellKnown()
+{
+    public string xch_address { get; init; } = "";
+    public string donation_address { get; init; } = "";
+}
+
 public sealed class G2To3Service
 {
     private readonly ChiaService _chiaService;
@@ -11,12 +18,13 @@ public sealed class G2To3Service
     public G2To3Service(ChiaService chiaService, ILogger<G2To3Service> logger, IConfiguration configuration) =>
             (_chiaService, _logger, _configuration) = (chiaService, logger, configuration);
 
-    public dynamic GetWellKnown()
+    public WellKnown GetWellKnown()
     {
-        dynamic wellKnown = new ExpandoObject();
-        wellKnown.xch_address = _configuration.GetValue("App:xch_address", ""); ;
-        wellKnown.donation_address = _configuration.GetValue("App:donation_address", "");
-        return wellKnown;
+        return new WellKnown
+        {
+            xch_address = _configuration.GetValue("App:xch_address", "")!,
+            donation_address = _configuration.GetValue("App:donation_address", "")!
+        };
     }
 
     public async Task<IEnumerable<string>?> GetKeys(string storeId, CancellationToken cancellationToken)
@@ -47,7 +55,7 @@ public sealed class G2To3Service
     public async Task<string?> GetValue(string storeId, string key, CancellationToken cancellationToken)
     {
         var dataLayer = await _chiaService.GetDataLayer(cancellationToken) ?? throw new Exception("DataLayer not available");
-        
+
         try
         {
             return await dataLayer.GetValue(storeId, key, null, cancellationToken);

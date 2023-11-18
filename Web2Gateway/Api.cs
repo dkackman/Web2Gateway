@@ -7,16 +7,8 @@ internal static class Api
         app.MapGet("/", () => Results.Redirect("/.well-known", true));
         app.MapGet("/.well-known", () =>
             {
-                try
-                {
-                    var g223 = app.Services.GetRequiredService<G2To3Service>();
-                    return g223.GetWellKnown();
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "{Message}", ex.Message);
-                    return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
-                }
+                var g223 = app.Services.GetRequiredService<G2To3Service>();
+                return g223.GetWellKnown();
             })
         .WithName(".well-known")
         .WithOpenApi();
