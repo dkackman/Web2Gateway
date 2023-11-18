@@ -4,6 +4,7 @@ using Web2Gateway;
 // instead of the IActionResult approach
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddApplicationInsightsTelemetry();
 
 // when run as a service, we need an explicit path to a chia config
 // file, which can be set in a appsettings.json file and passed on the command line
@@ -20,6 +21,7 @@ if (args.Any())
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
 builder.Services.AddControllers();
+
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
