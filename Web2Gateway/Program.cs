@@ -46,7 +46,7 @@ if (app.Environment.IsDevelopment())
 // the service end points are defined in here
 app.ConfigureApi(logger)
     .UseCors()
-    .UseHttpsRedirection()
+    //.UseHttpsRedirection()
     .UseAuthorization();
 app.MapControllers();
 app.Run();
