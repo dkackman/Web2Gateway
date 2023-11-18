@@ -4,6 +4,7 @@ internal static class Api
 {
     public static WebApplication ConfigureApi(this WebApplication app, ILogger logger)
     {
+        app.MapGet("/", () => Results.Redirect("/.well-known", true));
         app.MapGet("/.well-known", () =>
             {
                 try
