@@ -39,7 +39,8 @@ internal static class Api
                         {
                             var html = await g223.GetValueAsHtml(storeId, cancellationToken);
                             httpContext.Response.ContentType = "text/html";
-                            return Results.Ok(html);
+                            await httpContext.Response.WriteAsync(html, cancellationToken);
+                            return Results.Ok();
                         }
 
                         return Results.Ok(decodedKeys);
