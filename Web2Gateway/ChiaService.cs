@@ -15,6 +15,7 @@ public sealed class ChiaService
 
     private Config GetConfig()
     {
+        // first see if we have a config file path in the appsettings.json
         var configPath = _configuration.GetValue("App:chia_config_path", "");
         if (!string.IsNullOrEmpty(configPath))
         {
@@ -22,14 +23,34 @@ public sealed class ChiaService
             return Config.Open(configPath);
         }
 
+        // if not use the chia default '~/.chia/mainnet/config/config.yaml'
         return Config.Open();
+    }
+
+    private EndpointInfo GetDataLayerEndpoint()
+    {
+        // first check user secrets for the data_layer connection
+        // https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-7.0&tabs=windows
+        var dataLayerUri = _configuration.GetValue("data_layer_uri", "")!;
+        if (!string.IsNullOrEmpty(dataLayerUri))
+        {
+            return new EndpointInfo()
+            {
+                Uri = new Uri(dataLayerUri),
+                Cert = _configuration.GetValue("data_layer_cert", "")!,
+                Key = _configuration.GetValue("data_layer_key", "")!
+            };
+        }
+
+        // if not present see if we can get it from the config file
+        return GetConfig().GetEndpoint("data_layer");
     }
 
     public async Task<DataLayerProxy?> GetDataLayer(CancellationToken stoppingToken)
     {
         try
         {
-            var endpoint = GetConfig().GetEndpoint("data_layer");
+            var endpoint = GetDataLayerEndpoint();
 
             _logger.LogInformation("Connecting to data layer at {Uri}", endpoint.Uri);
             var rpcClient = new HttpRpcClient(endpoint);
