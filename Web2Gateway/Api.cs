@@ -33,19 +33,16 @@ internal static class Api
 
                     if (keys is not null)
                     {
-                        var apiResponse = keys.Select(key => HexUtils.FromHex(key)).ToList();
+                        var decodedKeys = keys.Select(key => HexUtils.FromHex(key)).ToList();
 
-                        if (apiResponse != null && apiResponse.Count > 0 && apiResponse.Contains("index.html") && showKeys != true)
+                        if (decodedKeys != null && decodedKeys.Count > 0 && decodedKeys.Contains("index.html") && showKeys != true)
                         {
                             var html = await g223.GetValueAsHtml(storeId, cancellationToken);
-
-                            // Set Content-Type to HTML and send the decoded value
                             httpContext.Response.ContentType = "text/html";
-                            await httpContext.Response.WriteAsync(html, cancellationToken);
-                            return Results.Ok();
+                            return Results.Ok(html);
                         }
 
-                        return Results.Ok(apiResponse);
+                        return Results.Ok(decodedKeys);
                     }
 
                     return Results.NotFound();
