@@ -47,7 +47,7 @@ public sealed class ChiaService
         return GetConfig().GetEndpoint("data_layer");
     }
 
-    public async Task<DataLayerProxy?> GetDataLayer(CancellationToken stoppingToken)
+    public DataLayerProxy? GetDataLayer(CancellationToken stoppingToken)
     {
         try
         {
@@ -56,9 +56,7 @@ public sealed class ChiaService
             _logger.LogInformation("Connecting to data layer at {Uri}", endpoint.Uri);
             var rpcClient = new HttpRpcClient(endpoint);
 
-            var dl = new DataLayerProxy(rpcClient, "DlMirrorSync");
-            await dl.HealthZ(stoppingToken);
-            return dl;
+            return new DataLayerProxy(rpcClient, "DlMirrorSync");
         }
         catch (Exception ex)
         {

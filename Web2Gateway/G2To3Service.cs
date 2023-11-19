@@ -1,5 +1,3 @@
-using System.Dynamic;
-
 namespace Web2Gateway;
 
 
@@ -29,7 +27,7 @@ public sealed class G2To3Service
 
     public async Task<IEnumerable<string>?> GetKeys(string storeId, CancellationToken cancellationToken)
     {
-        var dataLayer = await _chiaService.GetDataLayer(cancellationToken) ?? throw new Exception("DataLayer not available");
+        var dataLayer = _chiaService.GetDataLayer(cancellationToken) ?? throw new Exception("DataLayer not available");
 
         try
         {
@@ -45,16 +43,36 @@ public sealed class G2To3Service
     public async Task<string> GetValueAsHtml(string storeId, CancellationToken cancellationToken)
     {
         var hexKey = HexUtils.ToHex("index.html");
-        var dataLayerResponse = await GetValue(storeId, hexKey, cancellationToken) ?? throw new InvalidOperationException("Couldn't retrieve expected key value");
-        var value = HexUtils.FromHex(dataLayerResponse);
-        // Add the base tag
-        var baseTag = $"<base href=\"/{storeId}/\">";
-        return value.Replace("<head>", $"<head>\n    {baseTag}");
+        var value = await GetValue(storeId, hexKey, cancellationToken) ?? throw new InvalidOperationException("Couldn't retrieve expected key value");
+        var decodedValue = HexUtils.FromHex(value);
+        var baseTag = $"<base href=\"/{storeId}/\">"; // Add the base tag
+        return decodedValue.Replace("<head>", $"<head>\n    {baseTag}");
+    }
+
+    public async Task<byte[]> GetValuesAsBytes(string storeId, dynamic json, CancellationToken cancellationToken)
+    {
+        var multipartFileNames = json.parts as IEnumerable<string> ?? new List<string>();
+        var sortedFileNames = new List<string>(multipartFileNames);
+        sortedFileNames.Sort((a, b) =>
+            {
+                int numberA = int.Parse(a.Split(".part")[1]);
+                int numberB = int.Parse(b.Split(".part")[1]);
+                return numberA.CompareTo(numberB);
+            });
+
+        var hexPartsPromises = multipartFileNames.Select(async fileName =>
+        {
+            var hexKey = HexUtils.ToHex(fileName);
+            return await GetValue(storeId, hexKey, cancellationToken);
+        });
+        var dataLayerResponses = await Task.WhenAll(hexPartsPromises);
+        var resultHex = string.Join("", dataLayerResponses);
+        return Convert.FromHexString(resultHex);
     }
 
     public async Task<string?> GetValue(string storeId, string key, CancellationToken cancellationToken)
     {
-        var dataLayer = await _chiaService.GetDataLayer(cancellationToken) ?? throw new Exception("DataLayer not available");
+        var dataLayer = _chiaService.GetDataLayer(cancellationToken) ?? throw new Exception("DataLayer not available");
 
         try
         {
@@ -62,7 +80,7 @@ public sealed class G2To3Service
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "{Message}", ex.Message);
+            _logger.LogWarning(ex, "{Message}", ex.Message);
             return null;
         }
     }
