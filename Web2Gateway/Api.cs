@@ -35,12 +35,11 @@ internal static class Api
                     {
                         var decodedKeys = keys.Select(key => HexUtils.FromHex(key)).ToList();
 
+                        // the key represents a SPA app, so we want to return the index.html
                         if (decodedKeys != null && decodedKeys.Count > 0 && decodedKeys.Contains("index.html") && showKeys != true)
                         {
                             var html = await g223.GetValueAsHtml(storeId, cancellationToken);
-                            httpContext.Response.ContentType = "text/html";
-                            await httpContext.Response.WriteAsync(html, cancellationToken);
-                            return Results.Ok();
+                            return Results.Content(html, "text/html");
                         }
 
                         return Results.Ok(decodedKeys);
