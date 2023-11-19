@@ -7,6 +7,8 @@ namespace Web2Gateway;
 /// </summary>
 public sealed class ChiaService
 {
+    private readonly object _syncLock = new();
+    private EndpointInfo? _endpointInfo = null!;
     private readonly ILogger<ChiaService> _logger;
     private readonly IConfiguration _configuration;
 
@@ -29,22 +31,34 @@ public sealed class ChiaService
 
     private EndpointInfo GetDataLayerEndpoint()
     {
-        // first check user secrets for the data_layer connection
-        // https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-7.0&tabs=windows
-        var dataLayerUri = _configuration.GetValue("data_layer_uri", "")!;
-        if (!string.IsNullOrEmpty(dataLayerUri))
+        lock (_syncLock)
         {
-            return new EndpointInfo()
+            if (_endpointInfo is not null)
             {
-                Uri = new Uri(dataLayerUri),
-                // when stored in an environment variable the newlines might be escaped
-                Cert = _configuration.GetValue("data_layer_cert", "")!.Replace("\\n", "\n"),
-                Key = _configuration.GetValue("data_layer_key", "")!.Replace("\\n", "\n")
-            };
-        }
+                return _endpointInfo;
+            }
 
-        // if not present see if we can get it from the config file
-        return GetConfig().GetEndpoint("data_layer");
+            // first check user secrets for the data_layer connection
+            // https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-7.0&tabs=windows
+            var dataLayerUri = _configuration.GetValue("data_layer_uri", "")!;
+            if (!string.IsNullOrEmpty(dataLayerUri))
+            {
+                _endpointInfo = new EndpointInfo()
+                {
+                    Uri = new Uri(dataLayerUri),
+                    // when stored in an environment variable the newlines might be escaped
+                    Cert = _configuration.GetValue("data_layer_cert", "")!.Replace("\\n", "\n"),
+                    Key = _configuration.GetValue("data_layer_key", "")!.Replace("\\n", "\n")
+                };
+            }
+            else
+            {
+                // if not present see if we can get it from the config file
+                _endpointInfo = GetConfig().GetEndpoint("data_layer");
+            }
+
+            return _endpointInfo;
+        }
     }
 
     public DataLayerProxy? GetDataLayer(CancellationToken stoppingToken)
