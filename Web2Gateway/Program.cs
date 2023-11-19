@@ -27,10 +27,12 @@ builder.Logging.ClearProviders()
     .AddConsole();
 
 builder.Services.AddControllers();
+
 builder.Services.AddSingleton<ChiaService>()
     .AddSingleton<G2To3Service>()
     .AddEndpointsApiExplorer()
-    .AddSwaggerGen();
+    .AddSwaggerGen()
+    .AddMemoryCache();
 
 var logger = LoggerFactory.Create(config =>
 {
