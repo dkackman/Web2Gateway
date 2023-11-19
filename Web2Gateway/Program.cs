@@ -4,10 +4,15 @@ using Web2Gateway;
 // instead of the IActionResult approach
 
 var builder = WebApplication.CreateBuilder(args);
-builder.Services.AddApplicationInsightsTelemetry();
 
-// when run as a service, we need an explicit path to a chia config
-// file, which can be set in a appsettings.json file and passed on the command line
+if (builder.Environment.IsProduction())
+{
+    builder.Services.AddApplicationInsightsTelemetry();
+}
+
+// we can take the path to an appsettings.json file as an argument
+// if not provided, the default appsettings.json will be used and settings
+// will come from there or from environment variables
 if (args.Any())
 {
     var configurationBinder = new ConfigurationBuilder()
@@ -18,15 +23,14 @@ if (args.Any())
 }
 
 // Add services to the container.
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Services.AddControllers();
+builder.Logging.ClearProviders()
+    .AddConsole();
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-builder.Services.AddSingleton<ChiaService>();
-builder.Services.AddSingleton<G2To3Service>();
+builder.Services.AddControllers();
+builder.Services.AddSingleton<ChiaService>()
+    .AddSingleton<G2To3Service>()
+    .AddEndpointsApiExplorer()
+    .AddSwaggerGen();
 
 var logger = LoggerFactory.Create(config =>
 {
@@ -37,13 +41,12 @@ var configuration = builder.Configuration;
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-app.UseSwagger();
-app.UseSwaggerUI();
+app.UseSwagger()
+    .UseSwaggerUI();
 
 // the service end points are defined in here
 app.ConfigureApi(logger)
-    .UseCors()
-    //.UseHttpsRedirection()
-    .UseAuthorization();
+    .UseCors();
+
 app.MapControllers();
 app.Run();
