@@ -102,22 +102,14 @@ internal static class Api
                     {
                         string mimeType = Utils.GetMimeType(fileExtension) ?? "application/octet-stream";
                         var bytes = await g223.GetValuesAsBytes(storeId, json, cancellationToken);
-                        httpContext.Response.ContentType = mimeType;
-                        await httpContext.Response.Body.WriteAsync(bytes, cancellationToken);
-                        await httpContext.Response.CompleteAsync();
 
-                        return Results.StatusCode(StatusCodes.Status200OK);
+                        return Results.File(bytes, mimeType);
                     }
                     else if (!string.IsNullOrEmpty(fileExtension))
                     {
                         string mimeType = Utils.GetMimeType(fileExtension) ?? "application/octet-stream";
 
-                        httpContext.Response.ContentType = mimeType;
-                        // this should work for text and images just all as bytes
-                        await httpContext.Response.Body.WriteAsync(Convert.FromHexString(rawValue), cancellationToken);
-                        await httpContext.Response.CompleteAsync();
-
-                        return Results.StatusCode(StatusCodes.Status200OK);
+                        return Results.File(Convert.FromHexString(rawValue), mimeType);
                     }
                     else if (json is not null)
                     {
@@ -133,11 +125,7 @@ internal static class Api
                         string base64Image = decodedValue.Split(";base64,")[^1];
                         byte[] imageBuffer = Convert.FromBase64String(base64Image);
 
-                        httpContext.Response.ContentType = match.Value;
-                        await httpContext.Response.Body.WriteAsync(imageBuffer, cancellationToken);
-                        await httpContext.Response.CompleteAsync();
-
-                        return Results.StatusCode(StatusCodes.Status200OK);
+                        return Results.File(imageBuffer, match.Value);
                     }
                     else
                     {
