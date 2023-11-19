@@ -37,8 +37,9 @@ public sealed class ChiaService
             return new EndpointInfo()
             {
                 Uri = new Uri(dataLayerUri),
-                Cert = _configuration.GetValue("data_layer_cert", "")!,
-                Key = _configuration.GetValue("data_layer_key", "")!
+                // when stored in an environment variable the newlines might be escaped
+                Cert = _configuration.GetValue("data_layer_cert", "")!.Replace("\\n", "\n"),
+                Key = _configuration.GetValue("data_layer_key", "")!.Replace("\\n", "\n")
             };
         }
 
