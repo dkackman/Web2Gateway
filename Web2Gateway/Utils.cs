@@ -22,9 +22,14 @@ internal static class Utils
     {
         try
         {
-            v = JsonSerializer.Deserialize<dynamic>(strInput) ?? throw new Exception("Couldn't deserialize JSON");
+            strInput = strInput.Trim();
+            if (strInput.StartsWith('{') && strInput.EndsWith('}') || //For object
+                strInput.StartsWith('[') && strInput.EndsWith(']')) //For array
+            {
+                v = JsonSerializer.Deserialize<dynamic>(strInput) ?? throw new Exception("Couldn't deserialize JSON");
 
-            return true;
+                return true;
+            }
         }
         catch (Exception)
         {

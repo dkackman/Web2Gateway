@@ -33,7 +33,7 @@ public sealed class ChiaConfig
     public EndpointInfo GetDataLayerEndpoint()
     {
         // first check user secrets for the data_layer connection
-        // https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-7.0&tabs=windows
+        // https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-8.0&tabs=windows
         var dataLayerUri = _configuration.GetValue("data_layer_uri", "")!;
         if (!string.IsNullOrEmpty(dataLayerUri))
         {

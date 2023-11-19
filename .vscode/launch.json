@@ -13,7 +13,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Web2Gateway/bin/Debug/net7.0/Web2Gateway.dll",
+            "program": "${workspaceFolder}/Web2Gateway/bin/Debug/net8.0/Web2Gateway.dll",
             "args": [
                 //"C:\\Users\\don\\.g2to3\\appsettings.json"
             ],
