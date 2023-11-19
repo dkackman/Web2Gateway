@@ -33,10 +33,9 @@ public sealed class G2To3Service
         {
             return await dataLayer.GetKeys(storeId, null, cancellationToken);
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogError(ex, "{Message}", ex.Message);
-            return null;
+            return null;  // 404 in the api
         }
     }
 
@@ -46,6 +45,7 @@ public sealed class G2To3Service
         var value = await GetValue(storeId, hexKey, cancellationToken) ?? throw new InvalidOperationException("Couldn't retrieve expected key value");
         var decodedValue = HexUtils.FromHex(value);
         var baseTag = $"<base href=\"/{storeId}/\">"; // Add the base tag
+
         return decodedValue.Replace("<head>", $"<head>\n    {baseTag}");
     }
 
@@ -67,6 +67,7 @@ public sealed class G2To3Service
         });
         var dataLayerResponses = await Task.WhenAll(hexPartsPromises);
         var resultHex = string.Join("", dataLayerResponses);
+
         return Convert.FromHexString(resultHex);
     }
 
@@ -78,10 +79,9 @@ public sealed class G2To3Service
         {
             return await dataLayer.GetValue(storeId, key, null, cancellationToken);
         }
-        catch (Exception ex)
+        catch
         {
-            _logger.LogWarning(ex, "{Message}", ex.Message);
-            return null;
+            return null; // 404 in the api
         }
     }
 }
