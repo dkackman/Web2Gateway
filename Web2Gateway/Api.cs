@@ -79,25 +79,24 @@ internal static class Api
                     var referer = httpContext.Request.Headers["referer"].ToString();
                     if (!string.IsNullOrEmpty(referer) && !referer.Contains(storeId))
                     {
-                        if (key.StartsWith("/"))
-                        {
-                            key = key[1..];
-                        }
-
+                        key = key.TrimStart('/');
                         httpContext.Response.Headers["Location"] = $"{referer}/{storeId}/{key}";
+
                         return Results.Redirect($"{referer}/{storeId}/{key}", true);
                     }
 
                     var hexKey = HexUtils.ToHex(key);
                     var g223 = app.Services.GetRequiredService<G2To3Service>();
-                    var dataLayerResponse = await g223.GetValue(storeId, hexKey, cancellationToken);
-                    if (dataLayerResponse is null)
+                    var rawValue = await g223.GetValue(storeId, hexKey, cancellationToken);
+                    if (rawValue is null)
                     {
+                        Console.WriteLine($"couldn't find: {key}");
+
                         return Results.NotFound();
                     }
-
-                    var decodedValue = HexUtils.FromHex(dataLayerResponse);
-                    var fileExtension = Path.GetExtension(decodedValue);
+                    Console.WriteLine($"found: {key}");
+                    var decodedValue = HexUtils.FromHex(rawValue);
+                    var fileExtension = Path.GetExtension(key);
 
                     if (Utils.TryParseJson(decodedValue, out var json) && json?.type == "multipart")
                     {
@@ -106,12 +105,19 @@ internal static class Api
                         httpContext.Response.ContentType = mimeType;
                         await httpContext.Response.Body.WriteAsync(bytes, cancellationToken);
                         await httpContext.Response.CompleteAsync();
+
                         return Results.StatusCode(StatusCodes.Status200OK);
                     }
                     else if (!string.IsNullOrEmpty(fileExtension))
                     {
                         string mimeType = Utils.GetMimeType(fileExtension) ?? "application/octet-stream";
-                        return Results.Content(decodedValue, mimeType);
+
+                        httpContext.Response.ContentType = mimeType;
+                        // this should work for text and images just all as bytes
+                        await httpContext.Response.Body.WriteAsync(Convert.FromHexString(rawValue), cancellationToken);
+                        await httpContext.Response.CompleteAsync();
+
+                        return Results.StatusCode(StatusCodes.Status200OK);
                     }
                     else if (json is not null)
                     {
@@ -119,14 +125,18 @@ internal static class Api
                     }
                     else if (Utils.IsBase64Image(decodedValue))
                     {
+                        // figure out the mime type
+                        var regex = new Regex(@"[^:]\w+\/[\w-+\d.]+(?=;|,)");
+                        var match = regex.Match(decodedValue);
+
+                        // convert the base64 string to a byte array
                         string base64Image = decodedValue.Split(";base64,")[^1];
                         byte[] imageBuffer = Convert.FromBase64String(base64Image);
 
-                        var regex = new Regex(@"[^:]\w+\/[\w-+\d.]+(?=;|,)");
-                        var match = regex.Match(decodedValue);
                         httpContext.Response.ContentType = match.Value;
                         await httpContext.Response.Body.WriteAsync(imageBuffer, cancellationToken);
                         await httpContext.Response.CompleteAsync();
+
                         return Results.StatusCode(StatusCodes.Status200OK);
                     }
                     else

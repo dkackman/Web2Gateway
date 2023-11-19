@@ -10,7 +10,7 @@ internal static class HexUtils
     /// </summary>
     /// <param name="input">The input string to convert.</param>
     /// <returns>The hexadecimal representation of the input string.</returns>
-    public static string ToHex(this string input) => BitConverter.ToString(Encoding.UTF8.GetBytes(input)).Replace("-", "");
+    public static string ToHex(this string input) => BitConverter.ToString(Encoding.UTF8.GetBytes(input)).Replace("-", "").ToLowerInvariant();
 
     /// <summary>
     /// Converts a hexadecimal string to its corresponding string representation.
