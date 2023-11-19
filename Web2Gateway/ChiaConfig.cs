@@ -8,9 +8,9 @@ namespace Web2Gateway;
 public sealed class ChiaConfig
 {
     private readonly IConfiguration _configuration;
-    private readonly ILogger<ChiaService> _logger;
+    private readonly ILogger<ChiaConfig> _logger;
 
-    public ChiaConfig(ILogger<ChiaService> logger, IConfiguration configuration) =>
+    public ChiaConfig(ILogger<ChiaConfig> logger, IConfiguration configuration) =>
             (_logger, _configuration) = (logger, configuration);
 
     private Config GetConfig()
@@ -19,10 +19,14 @@ public sealed class ChiaConfig
         var configPath = _configuration.GetValue("App:chia_config_path", "");
         if (!string.IsNullOrEmpty(configPath))
         {
+            _logger.LogInformation("Using chia config {configPath}", configPath);
+
             return Config.Open(configPath);
         }
 
         // if not use the chia default '~/.chia/mainnet/config/config.yaml'
+        _logger.LogInformation("Using default chia config");
+
         return Config.Open();
     }
 
@@ -33,7 +37,7 @@ public sealed class ChiaConfig
         var dataLayerUri = _configuration.GetValue("data_layer_uri", "")!;
         if (!string.IsNullOrEmpty(dataLayerUri))
         {
-            _logger.LogInformation($"Connecting to {dataLayerUri}");
+            _logger.LogInformation("Connecting to {dataLayerUri}", dataLayerUri);
             return new EndpointInfo()
             {
                 Uri = new Uri(dataLayerUri),

@@ -1,5 +1,7 @@
 using Microsoft.Extensions.Caching.Memory;
 
+using chia.dotnet;
+
 namespace Web2Gateway;
 
 
@@ -11,13 +13,13 @@ public record WellKnown()
 
 public sealed class G2To3Service
 {
-    private readonly ChiaService _chiaService;
+    private readonly DataLayerProxy _dataLayer;
     private readonly IMemoryCache _memoryCache;
     private readonly ILogger<G2To3Service> _logger;
     private readonly IConfiguration _configuration;
 
-    public G2To3Service(ChiaService chiaService, IMemoryCache memoryCache, ILogger<G2To3Service> logger, IConfiguration configuration) =>
-            (_chiaService, _memoryCache, _logger, _configuration) = (chiaService, memoryCache, logger, configuration);
+    public G2To3Service(DataLayerProxy dataLayer, IMemoryCache memoryCache, ILogger<G2To3Service> logger, IConfiguration configuration) =>
+            (_dataLayer, _memoryCache, _logger, _configuration) = (dataLayer, memoryCache, logger, configuration);
 
     public WellKnown GetWellKnown()
     {
@@ -30,15 +32,13 @@ public sealed class G2To3Service
 
     public async Task<IEnumerable<string>?> GetKeys(string storeId, CancellationToken cancellationToken)
     {
-        var dataLayer = _chiaService.GetDataLayer(cancellationToken) ?? throw new Exception("DataLayer not available");
-
         try
         {
             var keys = await _memoryCache.GetOrCreateAsync($"{storeId}", async entry =>
             {
                 entry.SlidingExpiration = TimeSpan.FromMinutes(15);
                 _logger.LogInformation("Getting keys for {StoreId}", storeId);
-                return await dataLayer.GetKeys(storeId, null, cancellationToken);
+                return await _dataLayer.GetKeys(storeId, null, cancellationToken);
             });
 
             return keys;
@@ -51,15 +51,13 @@ public sealed class G2To3Service
 
     public async Task<string?> GetValue(string storeId, string key, CancellationToken cancellationToken)
     {
-        var dataLayer = _chiaService.GetDataLayer(cancellationToken) ?? throw new Exception("DataLayer not available");
-
         try
         {
             var value = await _memoryCache.GetOrCreateAsync($"{storeId}-{key}", async entry =>
             {
                 entry.SlidingExpiration = TimeSpan.FromMinutes(15);
                 _logger.LogInformation("Getting value for {StoreId} {Key}", storeId, key);
-                return await dataLayer.GetValue(storeId, key, null, cancellationToken);
+                return await _dataLayer.GetValue(storeId, key, null, cancellationToken);
             });
 
             return value;
@@ -69,7 +67,7 @@ public sealed class G2To3Service
             return null; // 404 in the api
         }
     }
-    
+
     public async Task<string> GetValueAsHtml(string storeId, CancellationToken cancellationToken)
     {
         var hexKey = HexUtils.ToHex("index.html");

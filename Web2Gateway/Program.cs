@@ -31,7 +31,7 @@ builder.Services.AddControllers();
 
 builder.Services.AddSingleton<ChiaConfig>()
     .AddSingleton((provider) => new HttpRpcClient(provider.GetService<ChiaConfig>()!.GetDataLayerEndpoint()))
-    .AddSingleton<ChiaService>()
+    .AddSingleton((provider) => new DataLayerProxy(provider.GetService<HttpRpcClient>()!, "g2to3"))
     .AddSingleton<G2To3Service>()
     .AddEndpointsApiExplorer()
     .AddSwaggerGen()
