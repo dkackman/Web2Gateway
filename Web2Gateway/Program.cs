@@ -1,4 +1,5 @@
 using Web2Gateway;
+using chia.dotnet;
 
 // doing all of this in the mini-api expressjs-like approach
 // instead of the IActionResult approach
@@ -28,7 +29,9 @@ builder.Logging.ClearProviders()
 
 builder.Services.AddControllers();
 
-builder.Services.AddSingleton<ChiaService>()
+builder.Services.AddSingleton<ChiaConfig>()
+    .AddSingleton((provider) => new HttpRpcClient(provider.GetService<ChiaConfig>()!.GetDataLayerEndpoint()))
+    .AddSingleton<ChiaService>()
     .AddSingleton<G2To3Service>()
     .AddEndpointsApiExplorer()
     .AddSwaggerGen()
